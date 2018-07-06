@@ -1,31 +1,58 @@
 package com.progteamf.test.imageviewer.activity;
 
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.CountDownTimer;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.progteamf.test.imageviewer.R;
 
 import java.io.InputStream;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
+    /**
+     * Attributes for displaying image
+     */
     private ImageView img;
     private Bitmap bitmap;
     private String url = "https://www.file-extensions.org/imgs/app-icon/128/11151/android-studio-icon.png";
 //    private static final String pathName = "/BIGDIG/Test";
 
+    /**
+     * Attributes for auto-closing
+     */
+    private CountDownTimer countDownTimer;
+    private long leftTimeInMilliseconds = 11000;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //==============Download and set Image to the ImageView=================================
-        img = findViewById(R.id.imageView);
-        new GetImageFromURL(img).execute(url);
+
+        Set<String> ss = getIntent().getCategories();
+        for(String temp : ss){
+            System.out.println(getIntent().toString());
+            System.out.println(temp);
+            if(temp.equals(Intent.CATEGORY_LAUNCHER)){
+                showClosingDialog();
+            } else {
+                //==============Download and set Image to the ImageView=================================
+                img = findViewById(R.id.imageView);
+                new GetImageFromURL(img).execute(url);
+            }
+        }
+
     }
 
     //=================Downloading File From The Internet==================================
@@ -57,5 +84,36 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(bitmap);
             imgV.setImageBitmap(bitmap);
         }
+    }
+
+    public void showClosingDialog() {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View root = inflater.inflate(R.layout.layout_closing_dialog, null);
+        final TextView sec = root.findViewById(R.id.seconds);
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setView(root);
+        adb.setPositiveButton("Close right now", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                countDownTimer.onFinish();
+            }
+        });
+        final AlertDialog alertDialog = adb.create();
+
+        alertDialog.show();
+        countDownTimer = new CountDownTimer(leftTimeInMilliseconds, 1000) {
+            @Override
+            public void onTick(long l) {
+                leftTimeInMilliseconds = l;
+                int seconds = (int) leftTimeInMilliseconds / 1000;
+                sec.setText("" + seconds + " ");
+            }
+            @Override
+            public void onFinish() {
+                countDownTimer.cancel();
+                alertDialog.dismiss();
+                MainActivity.this.finishAffinity();
+            }
+        }.start();
     }
 }
