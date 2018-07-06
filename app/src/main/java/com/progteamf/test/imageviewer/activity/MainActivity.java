@@ -20,13 +20,14 @@ import java.io.InputStream;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
-
+    private static final String LINK_TAG = "link_tag";
+    private static final String APP_A_URL_TAG = "app_a_url_tag";
     /**
      * Attributes for displaying image
      */
     private ImageView img;
     private Bitmap bitmap;
-    private String url = "https://www.file-extensions.org/imgs/app-icon/128/11151/android-studio-icon.png";
+    private String url;
 //    private static final String pathName = "/BIGDIG/Test";
 
     /**
@@ -34,24 +35,22 @@ public class MainActivity extends AppCompatActivity {
      */
     private CountDownTimer countDownTimer;
     private long leftTimeInMilliseconds = 11000;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        Set<String> ss = getIntent().getCategories();
-        for(String temp : ss){
-            System.out.println(getIntent().toString());
-            System.out.println(temp);
-            if(temp.equals(Intent.CATEGORY_LAUNCHER)){
-                showClosingDialog();
-            } else {
-                //==============Download and set Image to the ImageView=================================
-                img = findViewById(R.id.imageView);
-                new GetImageFromURL(img).execute(url);
-            }
+        Intent intentFromAppA = getIntent();
+        if (!isIntentFromA(intentFromAppA)) {
+            showClosingDialog();
+        } else {
+            url = intentFromAppA.getStringExtra(LINK_TAG);
+            //==============Download and set Image to the ImageView=================================
+            img = findViewById(R.id.imageView);
+            new GetImageFromURL(img).execute(url);
         }
+
 
     }
 
@@ -108,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
                 int seconds = (int) leftTimeInMilliseconds / 1000;
                 sec.setText("" + seconds + " ");
             }
+
             @Override
             public void onFinish() {
                 countDownTimer.cancel();
@@ -115,5 +115,15 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this.finishAffinity();
             }
         }.start();
+    }
+
+    private boolean isIntentFromA(Intent intent) {
+
+        Set<String> ss = intent.getCategories();
+        for (String temp : ss) {
+            if (temp.equals(APP_A_URL_TAG)) return true;
+        }
+        return false;
+
     }
 }
