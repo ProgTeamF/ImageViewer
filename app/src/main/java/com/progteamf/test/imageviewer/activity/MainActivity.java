@@ -1,11 +1,18 @@
 package com.progteamf.test.imageviewer.activity;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,8 +20,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.progteamf.test.imageviewer.R;
+import com.progteamf.test.imageviewer.controller.DownloadTaskController;
 
 import java.io.InputStream;
 import java.util.Set;
@@ -46,9 +55,19 @@ public class MainActivity extends AppCompatActivity {
             showClosingDialog();
         } else {
             url = intentFromAppA.getStringExtra(LINK_TAG);
-            //==============Download and set Image to the ImageView=================================
-            img = findViewById(R.id.imageView);
-            new GetImageFromURL(img).execute(url);
+
+            if (isConnectingToInternet()) {
+                //==============Download and set Image to the ImageView=================================
+                img = findViewById(R.id.imageView);
+                new GetImageFromURL(img).execute(url);
+
+
+
+                //Starts the download of image to device's External Storage at AsyncTask
+                new DownloadTaskController(MainActivity.this, url);
+            } else {
+                Toast.makeText(getApplicationContext(), "There isn't internet connection", Toast.LENGTH_LONG).show();
+            }
         }
 
 
@@ -117,6 +136,16 @@ public class MainActivity extends AppCompatActivity {
         }.start();
     }
 
+    //Check if internet is present or not
+    private boolean isConnectingToInternet() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected())
+            return true;
+        else
+            return false;
+    }
+
     private boolean isIntentFromA(Intent intent) {
 
         Set<String> ss = intent.getCategories();
@@ -125,5 +154,36 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+        {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+
+
+                // You can show your dialog message here but instead I am
+                // showing the grant permission dialog box
+                ActivityCompat.requestPermissions(this, new String[] {
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.READ_EXTERNAL_STORAGE },
+                        10);
+
+
+
+            }
+            else{
+
+                //Requesting permission
+                ActivityCompat.requestPermissions(this, new String[] {
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.READ_EXTERNAL_STORAGE },
+                        10);
+            }
+        }
     }
 }
