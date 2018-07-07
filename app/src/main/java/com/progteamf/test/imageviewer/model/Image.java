@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class Image {
 
-    private int id;
+    private String id;
     private String link;
     private Status status;
     private GregorianCalendar time;
@@ -13,18 +13,18 @@ public class Image {
     public Image() {
     }
 
-    public Image(int id, String link, Status status, GregorianCalendar time) {
+    public Image(String id, String link, Status status, GregorianCalendar time) {
         this.id = id;
         this.link = link;
         this.status = status;
         this.time = time;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -67,7 +67,7 @@ public class Image {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Image image = (Image) o;
-        return id == image.id &&
+        return Objects.equals(id, image.id) &&
                 Objects.equals(link, image.link) &&
                 status == image.status &&
                 Objects.equals(time, image.time);
