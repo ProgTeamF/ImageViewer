@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">ImageViewer</string>
+
+    <!-- strings for auto-closing dialog -->
+    <string name="launcher_msg">This app is not independent. It will be closed in  </string>
+    <string name="seconds_left">seconds.</string>
+
+
 </resources>
