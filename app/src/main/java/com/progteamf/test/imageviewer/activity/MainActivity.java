@@ -11,11 +11,13 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
+import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -24,11 +26,26 @@ import android.widget.Toast;
 
 import com.progteamf.test.imageviewer.R;
 import com.progteamf.test.imageviewer.controller.DownloadTaskController;
+import com.progteamf.test.imageviewer.db.ImageDAO;
+import com.progteamf.test.imageviewer.model.Image;
+import com.progteamf.test.imageviewer.model.Status;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Set;
 
+import io.realm.Realm;
+import io.realm.RealmConfiguration;
+
 public class MainActivity extends AppCompatActivity {
+
+    private static boolean REALM_ISNT_INIT = true;
+    private static final String MAIN_TAG = "MainActivity_log";
+
     private static final String LINK_TAG = "link_tag";
     private static final String APP_A_URL_TAG = "app_a_url_tag";
     /**
@@ -49,6 +66,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.e("MAIN", "onCreate");
+
+        while (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            getPermissionForExternalStorage();
+        }
+        if (REALM_ISNT_INIT) {
+            try {
+                initRealm();
+            } catch (IOException e) {
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG);
+            } catch (IllegalArgumentException e) {
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG);
+            }
+        }
 
         Intent intentFromAppA = getIntent();
         if (!isIntentFromA(intentFromAppA)) {
@@ -62,15 +93,24 @@ public class MainActivity extends AppCompatActivity {
                 new GetImageFromURL(img).execute(url);
 
 
-
                 //Starts the download of image to device's External Storage at AsyncTask
                 new DownloadTaskController(MainActivity.this, url);
             } else {
                 Toast.makeText(getApplicationContext(), "There isn't internet connection", Toast.LENGTH_LONG).show();
             }
         }
+    }
 
-
+    private void initRealm() throws IOException {
+        REALM_ISNT_INIT = false;
+        Log.e(MAIN_TAG, "realm initialization.");
+        Realm.init(this);
+        RealmConfiguration realmConfig = new RealmConfiguration.Builder()
+                .directory(new File(Environment.getExternalStorageDirectory() + "/BIGDIG/test/realm"))
+                .name("progTeamF.realm")
+                .schemaVersion(0)
+                .build();
+        Realm.setDefaultConfiguration(realmConfig);
     }
 
     //=================Downloading File From The Internet==================================
@@ -156,34 +196,31 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-        {
-
+    private void getPermissionForExternalStorage() {
+        do {
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
 
 
                 // You can show your dialog message here but instead I am
                 // showing the grant permission dialog box
-                ActivityCompat.requestPermissions(this, new String[] {
+                ActivityCompat.requestPermissions(this, new String[]{
                                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                Manifest.permission.READ_EXTERNAL_STORAGE },
+                                Manifest.permission.READ_EXTERNAL_STORAGE},
                         10);
 
 
-
-            }
-            else{
+            } else {
 
                 //Requesting permission
-                ActivityCompat.requestPermissions(this, new String[] {
+                ActivityCompat.requestPermissions(this, new String[]{
                                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                Manifest.permission.READ_EXTERNAL_STORAGE },
+                                Manifest.permission.READ_EXTERNAL_STORAGE},
                         10);
+
             }
         }
+        while (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED);
     }
+
 }
