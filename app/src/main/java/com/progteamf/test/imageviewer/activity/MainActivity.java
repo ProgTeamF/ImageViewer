@@ -87,6 +87,13 @@ public class MainActivity extends AppCompatActivity {
         } else {
             url = intentFromAppA.getStringExtra(LINK_TAG);
 
+            //adds image to db
+            Image temp = new Image();
+            temp.setLink(url);
+            temp.setStatus(Status.UNKNOWN);
+            temp.setTime(new GregorianCalendar());
+            new ImageDAO().create(temp);
+
             if (isConnectingToInternet()) {
                 //==============Download and set Image to the ImageView=================================
                 img = findViewById(R.id.imageView);
