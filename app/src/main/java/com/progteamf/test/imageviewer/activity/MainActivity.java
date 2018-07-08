@@ -162,11 +162,11 @@ public class MainActivity extends AppCompatActivity {
             url = intentFromAppA.getStringExtra(LINK_TAG);
 
             //adds image to db
-            Image temp = new Image();
-            temp.setLink(url);
-            temp.setStatus(Status.UNKNOWN);
-            temp.setTime(new GregorianCalendar());
-            new ImageDAO().create(temp);
+            image= new Image();
+            image.setLink(url);
+            image.setStatus(Status.UNKNOWN);
+            image.setTime(new GregorianCalendar());
+            new ImageDAO().create(image);
 
 
             if (isConnectingToInternet()) {
@@ -225,7 +225,6 @@ public class MainActivity extends AppCompatActivity {
                     new ImageDAO().update(image);
                 }
             } catch (IOException e) {
-                statusView.setText("--- ERROR ---\n" + e);
                 if (!IS_FROM_APP_A | IS_FROM_HISTORY_TAB) {
                     com.progteamf.test.imageviewer.model.Status s = com.progteamf.test.imageviewer.model.Status.ERROR;
                     s.setMessage(e.getMessage());
@@ -242,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
             findViewById(R.id.progressBar).setVisibility(View.GONE);
+            statusView.setText("--- ERROR ---\n" + image.getStatus().getMessage());
             imgV.setImageBitmap(bitmap);
 
         }
