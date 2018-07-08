@@ -14,7 +14,7 @@ public class ImageHelper {
 
     public static void setFromImage(ImageRealmObject iro, Image image){
         iro.setLink(image.getLink());
-        iro.setTime(new SimpleDateFormat("dd/mm/yyyy hh:MM").format(image.getTime().getTime()));
+        iro.setTime(new SimpleDateFormat("dd/MM/yyyy kk:mm").format(image.getTime().getTime()));
         iro.setStatusId(image.getStatus().getId());
     }
 
@@ -33,7 +33,7 @@ public class ImageHelper {
         }
         if (status!=null) status.setMessage(iro.getStatusMessage());
 
-        DateFormat dateFormat = new SimpleDateFormat("dd/mm/yyyy hh:MM");
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy kk:mm");
         Date d = null;
         try {
             d = dateFormat.parse(iro.getTime());

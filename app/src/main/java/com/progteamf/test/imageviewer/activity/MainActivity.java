@@ -33,7 +33,13 @@ import com.progteamf.test.imageviewer.model.Status;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
@@ -43,17 +49,33 @@ import io.realm.RealmConfiguration;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final String HISTORY_TAG = "history_tab";
+
+    private Image image;
+
+    private final String ID_TAG = "id_image";
+    private final String STATUS_ID_TAG = "status_id_image";
+    private final String STATUS_MESSAGE_TAG = "status_message_image";
+    private final String DATE_TAG = "data_image";
+
     private static boolean REALM_ISNT_INIT = true;
     private static final String MAIN_TAG = "MainActivity_log";
 
     private static final String LINK_TAG = "link_tag";
     private static final String APP_A_URL_TAG = "app_a_url_tag";
+
+    private boolean IS_FROM_APP_A = false;
+    private boolean IS_FROM_HISTORY_TAB = false;
+
+
+    private boolean IMAGE_IS_DOWLOADED = false;
     /**
      * Attributes for displaying image
      */
     private ImageView img;
     private Bitmap bitmap;
     private String url;
+    private TextView statusText;
 //    private static final String pathName = "/BIGDIG/Test";
 
     /**
@@ -82,9 +104,61 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Intent intentFromAppA = getIntent();
-        if (!isIntentFromA(intentFromAppA)) {
-            showClosingDialog();
-        } else {
+        isIntentFromA(intentFromAppA);
+
+
+        if (IS_FROM_HISTORY_TAB) {
+            IS_FROM_HISTORY_TAB = false;
+            image = new Image();
+            image.setId(intentFromAppA.getStringExtra(ID_TAG));
+            image.setLink(intentFromAppA.getStringExtra(LINK_TAG));
+            DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy kk:mm");
+            Date d = null;
+            try {
+                d = dateFormat.parse(intentFromAppA.getStringExtra(DATE_TAG));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            GregorianCalendar gc = new GregorianCalendar();
+            gc.setTimeInMillis(d.getTime());
+            image.setTime(gc);
+            Status status = null;
+            switch (intentFromAppA.getIntExtra(STATUS_ID_TAG, 3)) {
+                case 1:
+                    status = Status.DOWNLOADED;
+                    break;
+                case 2:
+                    status = Status.ERROR;
+                    break;
+                case 3:
+                    status = Status.UNKNOWN;
+                    break;
+            }
+            status.setMessage(intentFromAppA.getStringExtra(STATUS_MESSAGE_TAG));
+            image.setStatus(status);
+
+            System.out.println(image.toString());
+
+
+            //==============Download and set Image to the ImageView=================================
+            img = findViewById(R.id.imageView);
+            statusText = findViewById(R.id.statusView);
+            statusText.setText(image.getStatus().getMessage());
+            new GetImageFromURL(img, statusText).execute(image.getLink());
+
+            switch (image.getStatus()) {
+                case DOWNLOADED:
+                    //Starts the download of image to device's External Storage at AsyncTask
+//                    new DownloadTaskController(MainActivity.this, image.getLink());
+//                    new ImageDAO().delete(image.getId());
+
+                    break;
+                case ERROR:
+
+                    break;
+            }
+
+        } else if (IS_FROM_APP_A) {
             url = intentFromAppA.getStringExtra(LINK_TAG);
 
             //adds image to db
@@ -94,17 +168,17 @@ public class MainActivity extends AppCompatActivity {
             temp.setTime(new GregorianCalendar());
             new ImageDAO().create(temp);
 
+
             if (isConnectingToInternet()) {
                 //==============Download and set Image to the ImageView=================================
+                statusText = findViewById(R.id.statusView);
                 img = findViewById(R.id.imageView);
-                new GetImageFromURL(img).execute(url);
-
-
-                //Starts the download of image to device's External Storage at AsyncTask
-                new DownloadTaskController(MainActivity.this, url);
+                new GetImageFromURL(img, statusText).execute(url);
             } else {
                 Toast.makeText(getApplicationContext(), "There isn't internet connection", Toast.LENGTH_LONG).show();
             }
+        } else {
+            showClosingDialog();
         }
     }
 
@@ -124,9 +198,11 @@ public class MainActivity extends AppCompatActivity {
     //Class used to download the image by URL
     public class GetImageFromURL extends AsyncTask<String, Void, Bitmap> {
         ImageView imgV;
+        TextView statusView;
 
-        public GetImageFromURL(ImageView imgV) {
+        public GetImageFromURL(ImageView imgV, TextView statusView) {
             this.imgV = imgV;
+            this.statusView = statusView;
         }
 
         @Override
@@ -135,19 +211,39 @@ public class MainActivity extends AppCompatActivity {
             bitmap = null;
             InputStream srt;
             try {
-                srt = new java.net.URL(urldisplay).openStream();
+                URL link = new URL(urldisplay);
+                HttpURLConnection urlConn = (HttpURLConnection) link.openConnection();
+                urlConn.connect();
+
+
+                srt = link.openStream();
                 bitmap = BitmapFactory.decodeStream(srt);
                 srt.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+                IMAGE_IS_DOWLOADED = true;
+                if (!IS_FROM_APP_A | IS_FROM_HISTORY_TAB) {
+                    image.setStatus(com.progteamf.test.imageviewer.model.Status.DOWNLOADED);
+                    new ImageDAO().update(image);
+                }
+            } catch (IOException e) {
+                statusView.setText("--- ERROR ---\n" + e);
+                if (!IS_FROM_APP_A | IS_FROM_HISTORY_TAB) {
+                    com.progteamf.test.imageviewer.model.Status s = com.progteamf.test.imageviewer.model.Status.ERROR;
+                    s.setMessage(e.getMessage());
+                    image.setStatus(s);
+                    new ImageDAO().update(image);
+                }
             }
+
+
             return bitmap;
         }
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
+            findViewById(R.id.progressBar).setVisibility(View.GONE);
             imgV.setImageBitmap(bitmap);
+
         }
     }
 
@@ -193,13 +289,13 @@ public class MainActivity extends AppCompatActivity {
             return false;
     }
 
-    private boolean isIntentFromA(Intent intent) {
+    private void isIntentFromA(Intent intent) {
 
         Set<String> ss = intent.getCategories();
         for (String temp : ss) {
-            if (temp.equals(APP_A_URL_TAG)) return true;
+            if (temp.equals(APP_A_URL_TAG)) IS_FROM_APP_A = true;
+            if (temp.equals(HISTORY_TAG)) IS_FROM_HISTORY_TAB = true;
         }
-        return false;
 
     }
 
