@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -24,11 +25,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.progteamf.test.imageviewer.R;
 import com.progteamf.test.imageviewer.controller.DownloadTaskController;
 import com.progteamf.test.imageviewer.db.ImageDAO;
 import com.progteamf.test.imageviewer.model.Image;
 import com.progteamf.test.imageviewer.model.Status;
+import com.progteamf.test.imageviewer.service.DeleteLinkService;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,10 +41,8 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.Set;
 
 import io.realm.Realm;
@@ -140,22 +141,35 @@ public class MainActivity extends AppCompatActivity {
             System.out.println(image.toString());
 
 
-            //==============Download and set Image to the ImageView=================================
-            img = findViewById(R.id.imageView);
-            statusText = findViewById(R.id.statusView);
-            statusText.setText(image.getStatus().getMessage());
-            new GetImageFromURL(img, statusText).execute(image.getLink());
+            if (isConnectingToInternet()) {
+                //==============Download and set Image to the ImageView=================================
+                img = findViewById(R.id.imageView);
+                statusText = findViewById(R.id.statusView);
+                statusText.setText(image.getStatus().getMessage());
+                new GetImageFromURL(img, statusText).execute(image.getLink());
 
-            switch (image.getStatus()) {
-                case DOWNLOADED:
+
+                if (image.getStatus().equals(Status.DOWNLOADED)) {
                     //Starts the download of image to device's External Storage at AsyncTask
-//                    new DownloadTaskController(MainActivity.this, image.getLink());
-//                    new ImageDAO().delete(image.getId());
+                    new DownloadTaskController(MainActivity.this, image.getLink());
+                    System.out.println("Downloaded");
+                    System.out.println("Downloaded");
+                    System.out.println("Downloaded");
 
-                    break;
-                case ERROR:
 
-                    break;
+                    SharedPreferences mPrefs = getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor prefsEditor = mPrefs.edit();
+                    Gson gson = new Gson();
+                    String json = gson.toJson(image);
+                    prefsEditor.putString("image", json);
+                    prefsEditor.commit();
+
+                    Intent deleteService = new Intent(this, DeleteLinkService.class);
+                    startService(deleteService);
+                }
+
+            } else {
+                Toast.makeText(getApplicationContext(), "There isn't internet connection", Toast.LENGTH_LONG).show();
             }
 
         } else if (IS_FROM_APP_A) {
@@ -241,7 +255,16 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
             findViewById(R.id.progressBar).setVisibility(View.GONE);
-            statusView.setText("--- ERROR ---\n" + image.getStatus().getMessage());
+            switch (image.getStatus()){
+                case DOWNLOADED:
+                    statusView.setText("--- Downloaded ---");
+                    break;
+                case ERROR:
+                    statusView.setText("--- Error ---\n"+image.getStatus().getMessage());
+                case UNKNOWN:
+                    statusView.setText("--- Unknown ---");
+                    break;
+            }
             imgV.setImageBitmap(bitmap);
 
         }
