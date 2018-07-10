@@ -239,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
                     image.setStatus(com.progteamf.test.imageviewer.model.Status.DOWNLOADED);
                     new ImageDAO().update(image);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 if (!IS_FROM_APP_A | IS_FROM_HISTORY_TAB) {
                     com.progteamf.test.imageviewer.model.Status s = com.progteamf.test.imageviewer.model.Status.ERROR;
                     s.setMessage(e.getMessage());
@@ -247,7 +247,6 @@ public class MainActivity extends AppCompatActivity {
                     new ImageDAO().update(image);
                 }
             }
-
 
             return bitmap;
         }
@@ -262,6 +261,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case ERROR:
                     statusView.setText("--- Error ---\n"+image.getStatus().getMessage());
+                    break;
                 case UNKNOWN:
                     statusView.setText("--- Unknown ---");
                     break;
