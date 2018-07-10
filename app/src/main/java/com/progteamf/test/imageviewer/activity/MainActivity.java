@@ -42,6 +42,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.GregorianCalendar;
 import java.util.Set;
 
@@ -273,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
     public void showClosingDialog() {
         LayoutInflater inflater = LayoutInflater.from(this);
         View root = inflater.inflate(R.layout.layout_closing_dialog, null);
-        final TextView sec = root.findViewById(R.id.seconds);
+        final TextView sec = root.findViewById(R.id.textView);
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setView(root);
         adb.setPositiveButton("Close right now", new DialogInterface.OnClickListener() {
@@ -290,7 +291,9 @@ public class MainActivity extends AppCompatActivity {
             public void onTick(long l) {
                 leftTimeInMilliseconds = l;
                 int seconds = (int) leftTimeInMilliseconds / 1000;
-                sec.setText("" + seconds + " ");
+                StringBuilder message = new StringBuilder(getResources().getText(R.string.launcher_msg));
+                Formatter f = new Formatter();
+                sec.setText(f.format(message.toString(),seconds).toString());
             }
 
             @Override

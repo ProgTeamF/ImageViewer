@@ -20,32 +20,35 @@ public class ImageHelper {
 
     public static Image convertFromImageRealmObject(ImageRealmObject iro){
         Status status = null;
-        switch (iro.getStatusId()){
-            case 1:
-                status = Status.DOWNLOADED;
-                break;
-            case 2:
-                status = Status.ERROR;
-                break;
-            case 3:
-                status = Status.UNKNOWN;
-                break;
-        }
-        if (status!=null) status.setMessage(iro.getStatusMessage());
+        if (iro!=null) {
+            switch (iro.getStatusId()) {
+                case 1:
+                    status = Status.DOWNLOADED;
+                    break;
+                case 2:
+                    status = Status.ERROR;
+                    break;
+                case 3:
+                    status = Status.UNKNOWN;
+                    break;
+            }
+            if (status != null) status.setMessage(iro.getStatusMessage());
 
-        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy kk:mm");
-        Date d = null;
-        try {
-            d = dateFormat.parse(iro.getTime());
-        } catch (ParseException e) {
-            e.printStackTrace();
+            DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy kk:mm");
+            Date d = null;
+            try {
+                d = dateFormat.parse(iro.getTime());
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            GregorianCalendar gc = new GregorianCalendar();
+            gc.setTimeInMillis(d.getTime());
+            return new Image(iro.getId(),
+                    iro.getLink(),
+                    status,
+                    gc);
+        }else {
+            return null;
         }
-        GregorianCalendar gc = new GregorianCalendar();
-        gc.setTimeInMillis(d.getTime());
-
-        return new Image(iro.getId(),
-                iro.getLink(),
-                status,
-                gc);
     }
 }
