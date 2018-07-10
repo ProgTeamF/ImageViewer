@@ -20,6 +20,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -284,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         final AlertDialog alertDialog = adb.create();
-
+        alertDialog.setCanceledOnTouchOutside(false);
         alertDialog.show();
         countDownTimer = new CountDownTimer(leftTimeInMilliseconds, 1000) {
             @Override
