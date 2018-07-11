@@ -55,25 +55,23 @@ public class DeleteLinkService extends Service {
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         handler = new Handler();
+        SharedPreferences mPrefs = getApplicationContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+        final Gson gson = new Gson();
+        final String json = mPrefs.getString("image", "");
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
 
-
-
-// write your code to post content on server
-                SharedPreferences mPrefs = getApplicationContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
-                Gson gson = new Gson();
-                String json = mPrefs.getString("image", "");
                 Image image = gson.fromJson(json, Image.class);
                 initRealm();
                 if (new ImageDAO().read(image.getId())!=null) new ImageDAO().delete(image.getId());
                 Toast.makeText(getApplicationContext(), "Link \n'"+image.getLink() + "'\nwas deleted", Toast.LENGTH_LONG).show();
-                onDestroy();
 
 
             }
         }, 15000);
+
+        onDestroy();
         return android.app.Service.START_STICKY;
     }
 

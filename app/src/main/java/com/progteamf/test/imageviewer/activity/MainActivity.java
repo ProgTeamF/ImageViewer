@@ -70,8 +70,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean IS_FROM_APP_A = false;
     private boolean IS_FROM_HISTORY_TAB = false;
 
-
-    private boolean IMAGE_IS_DOWLOADED = false;
     /**
      * Attributes for displaying image
      */
@@ -161,6 +159,8 @@ public class MainActivity extends AppCompatActivity {
 
                     SharedPreferences mPrefs = getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
                     SharedPreferences.Editor prefsEditor = mPrefs.edit();
+
+
                     Gson gson = new Gson();
                     String json = gson.toJson(image);
                     prefsEditor.putString("image", json);
@@ -235,7 +235,6 @@ public class MainActivity extends AppCompatActivity {
                 srt = link.openStream();
                 bitmap = BitmapFactory.decodeStream(srt);
                 srt.close();
-                IMAGE_IS_DOWLOADED = true;
                 if (!IS_FROM_APP_A | IS_FROM_HISTORY_TAB) {
                     image.setStatus(com.progteamf.test.imageviewer.model.Status.DOWNLOADED);
                     new ImageDAO().update(image);
